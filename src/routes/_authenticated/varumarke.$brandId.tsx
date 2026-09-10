@@ -120,19 +120,19 @@ function BrandPage() {
     latest && previous
       ? comparabilityIssues(
           {
-            brandId: latest.brand_id,
-            promptSetId: latest.prompt_set_id,
-            modelId: latest.model_id,
+            brand_id: latest.brand_id,
+            prompt_set_id: latest.prompt_set_id,
+            model_id: latest.model_id,
             provider: latest.provider,
-            searchMode: latest.search_mode,
+            search_mode: latest.search_mode,
             mode: latest.mode,
           },
           {
-            brandId: previous.brand_id,
-            promptSetId: previous.prompt_set_id,
-            modelId: previous.model_id,
+            brand_id: previous.brand_id,
+            prompt_set_id: previous.prompt_set_id,
+            model_id: previous.model_id,
             provider: previous.provider,
-            searchMode: previous.search_mode,
+            search_mode: previous.search_mode,
             mode: previous.mode,
           },
         )
@@ -213,7 +213,13 @@ function BrandPage() {
   });
 
   const updateAction = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: "open" | "in_progress" | "done" | "dismissed";
+    }) => {
       await supabase.from("actions").update({ status }).eq("id", id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["brand", brandId] }),
