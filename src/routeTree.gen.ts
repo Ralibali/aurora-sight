@@ -10,33 +10,121 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as KontaktRouteImport } from './routes/kontakt'
+import { Route as PriserRouteImport } from './routes/priser'
+import { Route as AuthenticatedKlienterRouteImport } from './routes/_authenticated/klienter'
+import { Route as AuthenticatedOversiktRouteImport } from './routes/_authenticated/oversikt'
+import { Route as AuthenticatedVarumarkeBrandIdRouteImport } from './routes/_authenticated/varumarke.$brandId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KontaktRoute = KontaktRouteImport.update({
+  id: '/kontakt',
+  path: '/kontakt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PriserRoute = PriserRouteImport.update({
+  id: '/priser',
+  path: '/priser',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedKlienterRoute = AuthenticatedKlienterRouteImport.update({
+  id: '/klienter',
+  path: '/klienter',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOversiktRoute = AuthenticatedOversiktRouteImport.update({
+  id: '/oversikt',
+  path: '/oversikt',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVarumarkeBrandIdRoute =
+  AuthenticatedVarumarkeBrandIdRouteImport.update({
+    id: '/varumarke/$brandId',
+    path: '/varumarke/$brandId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/kontakt': typeof KontaktRoute
+  '/priser': typeof PriserRoute
+  '/klienter': typeof AuthenticatedKlienterRoute
+  '/oversikt': typeof AuthenticatedOversiktRoute
+  '/varumarke/$brandId': typeof AuthenticatedVarumarkeBrandIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/kontakt': typeof KontaktRoute
+  '/priser': typeof PriserRoute
+  '/klienter': typeof AuthenticatedKlienterRoute
+  '/oversikt': typeof AuthenticatedOversiktRoute
+  '/varumarke/$brandId': typeof AuthenticatedVarumarkeBrandIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/kontakt': typeof KontaktRoute
+  '/priser': typeof PriserRoute
+  '/_authenticated/klienter': typeof AuthenticatedKlienterRoute
+  '/_authenticated/oversikt': typeof AuthenticatedOversiktRoute
+  '/_authenticated/varumarke/$brandId': typeof AuthenticatedVarumarkeBrandIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/kontakt'
+    | '/priser'
+    | '/klienter'
+    | '/oversikt'
+    | '/varumarke/$brandId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/kontakt'
+    | '/priser'
+    | '/klienter'
+    | '/oversikt'
+    | '/varumarke/$brandId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/kontakt'
+    | '/priser'
+    | '/_authenticated/klienter'
+    | '/_authenticated/oversikt'
+    | '/_authenticated/varumarke/$brandId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  KontaktRoute: typeof KontaktRoute
+  PriserRoute: typeof PriserRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +136,79 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kontakt': {
+      id: '/kontakt'
+      path: '/kontakt'
+      fullPath: '/kontakt'
+      preLoaderRoute: typeof KontaktRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/priser': {
+      id: '/priser'
+      path: '/priser'
+      fullPath: '/priser'
+      preLoaderRoute: typeof PriserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/klienter': {
+      id: '/_authenticated/klienter'
+      path: '/klienter'
+      fullPath: '/klienter'
+      preLoaderRoute: typeof AuthenticatedKlienterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/oversikt': {
+      id: '/_authenticated/oversikt'
+      path: '/oversikt'
+      fullPath: '/oversikt'
+      preLoaderRoute: typeof AuthenticatedOversiktRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/varumarke/$brandId': {
+      id: '/_authenticated/varumarke/$brandId'
+      path: '/varumarke/$brandId'
+      fullPath: '/varumarke/$brandId'
+      preLoaderRoute: typeof AuthenticatedVarumarkeBrandIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedKlienterRoute: typeof AuthenticatedKlienterRoute
+  AuthenticatedOversiktRoute: typeof AuthenticatedOversiktRoute
+  AuthenticatedVarumarkeBrandIdRoute: typeof AuthenticatedVarumarkeBrandIdRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedKlienterRoute: AuthenticatedKlienterRoute,
+  AuthenticatedOversiktRoute: AuthenticatedOversiktRoute,
+  AuthenticatedVarumarkeBrandIdRoute: AuthenticatedVarumarkeBrandIdRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  KontaktRoute: KontaktRoute,
+  PriserRoute: PriserRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
