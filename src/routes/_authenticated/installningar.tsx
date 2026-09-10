@@ -79,18 +79,19 @@ function SettingsPage() {
             {status.isLoading ? (
               <Skeleton className="h-6 w-40" />
             ) : status.data?.liveEnabled ? (
-              <p>
+              <div>
                 <Badge className="mr-2 border-transparent bg-rec text-rec-foreground">LIVE</Badge>
                 OPENROUTER_API_KEY är konfigurerad. Riktiga analyser kan köras.
-              </p>
+              </div>
             ) : (
-              <p>
+              <div>
                 <Badge className="mr-2 border-transparent bg-demo text-demo-foreground">DEMO</Badge>
                 Ingen nyckel hittad. Lägg till <code>OPENROUTER_API_KEY</code> under
                 Projektinställningar → Secrets. Nyckeln lagras endast på servern och visas aldrig i
                 gränssnittet eller i databasen.
-              </p>
+              </div>
             )}
+
           </CardContent>
         </Card>
 
