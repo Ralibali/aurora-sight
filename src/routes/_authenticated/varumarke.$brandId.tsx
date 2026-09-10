@@ -651,7 +651,12 @@ function BrandPage() {
                   </div>
                   <Select
                     value={a.status}
-                    onValueChange={(status) => updateAction.mutate({ id: a.id, status })}
+                    onValueChange={(status) =>
+                      updateAction.mutate({
+                        id: a.id,
+                        status: status as "open" | "in_progress" | "done" | "dismissed",
+                      })
+                    }
                   >
                     <SelectTrigger className="w-40" aria-label="Status">
                       <SelectValue />
