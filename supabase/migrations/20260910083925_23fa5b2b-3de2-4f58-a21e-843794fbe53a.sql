@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.seed_demo_org(uuid) FROM PUBLIC, anon, authenticated;
