@@ -6,14 +6,18 @@ import {
   countMentions,
   extractUrls,
   normalizeDomain,
+  type ClassifyInput,
 } from "./geo";
 
-const base = {
-  brandName: "Stayboost",
-  brandAliases: [] as string[],
-  brandDomain: "stayboost.se",
-  competitors: [{ name: "Mews" }, { name: "Profitroom" }],
-};
+function input(answer: string, citationUrls: string[] = []): ClassifyInput {
+  return {
+    answer,
+    brandNames: ["Stayboost"],
+    brandDomain: "stayboost.se",
+    competitors: [{ name: "Mews" }, { name: "Profitroom" }],
+    citationUrls,
+  };
+}
 
 describe("countMentions", () => {
   it("kräver ordgräns och räknar inte delsträngar", () => {
@@ -33,63 +37,64 @@ describe("normalizeDomain och extractUrls", () => {
   });
 
   it("plockar ut url:er ur text", () => {
-    const urls = extractUrls("Se https://stayboost.se och https://mews.com/priser.");
-    expect(urls.length).toBe(2);
+    expect(extractUrls("Se https://stayboost.se och https://mews.com/priser.").length).toBe(2);
   });
 });
 
 describe("classifyAnswer", () => {
   it("ger ABSENT när varumärket inte nämns", () => {
-    const out = classifyAnswer({ ...base, answer: "Jag rekommenderar Mews och Profitroom." });
+    const out = classifyAnswer(input("Jag rekommenderar Mews och Profitroom."));
     expect(out.classification).toBe("ABSENT");
     expect(out.competitorMentions.find((c) => c.name === "Mews")?.count).toBe(1);
   });
 
-  it("ger MENTIONED vid enkelt omnämnande utan källa eller rekommendation", () => {
-    const out = classifyAnswer({
-      ...base,
-      answer: "Det finns flera aktörer på marknaden, till exempel Stayboost.",
-    });
+  it("ger MENTIONED vid enkelt omnämnande", () => {
+    const out = classifyAnswer(
+      input("Det finns flera aktörer på marknaden, till exempel Stayboost."),
+    );
     expect(out.classification).toBe("MENTIONED");
   });
 
   it("ger CITED när svaret länkar till varumärkets domän", () => {
-    const out = classifyAnswer({
-      ...base,
-      answer: "Stayboost finns beskrivet här: https://stayboost.se/om-oss",
-    });
+    const out = classifyAnswer(
+      input("Stayboost finns beskrivet här: https://stayboost.se/om-oss"),
+    );
     expect(out.classification).toBe("CITED");
   });
 
-  it("ger RECOMMENDED när en rekommendationssignal står nära varumärket", () => {
-    const out = classifyAnswer({
-      ...base,
-      answer: "Jag rekommenderar Stayboost för små hotell som vill öka direktbokningar.",
-    });
+  it("ger CITED när leverantörens citat pekar på varumärkets domän", () => {
+    const out = classifyAnswer(
+      input("Stayboost är ett alternativ.", ["https://stayboost.se/priser"]),
+    );
+    expect(out.classification).toBe("CITED");
+  });
+
+  it("ger RECOMMENDED vid rekommendationssignal nära varumärket", () => {
+    const out = classifyAnswer(
+      input("Jag rekommenderar Stayboost för små hotell som vill öka direktbokningar."),
+    );
     expect(out.classification).toBe("RECOMMENDED");
   });
 
   it("prioriterar RECOMMENDED före CITED", () => {
-    const out = classifyAnswer({
-      ...base,
-      answer: "Bästa valet är Stayboost, se https://stayboost.se för detaljer.",
-    });
+    const out = classifyAnswer(
+      input("Bästa valet är Stayboost, se https://stayboost.se för detaljer."),
+    );
     expect(out.classification).toBe("RECOMMENDED");
   });
 
   it("motiverar alltid klassificeringen", () => {
-    const out = classifyAnswer({ ...base, answer: "Inget relevant." });
-    expect(out.reason.length).toBeGreaterThan(0);
+    expect(classifyAnswer(input("Inget relevant.")).reason.length).toBeGreaterThan(0);
   });
 });
 
 describe("computeMetrics", () => {
   it("räknar andelar korrekt", () => {
     const m = computeMetrics([
-      { classification: "RECOMMENDED", intent: "recommendation", competitorMentions: [] },
-      { classification: "CITED", intent: "discovery", competitorMentions: [] },
-      { classification: "MENTIONED", intent: "discovery", competitorMentions: [] },
-      { classification: "ABSENT", intent: "comparison", competitorMentions: [] },
+      { classification: "RECOMMENDED", intent: "recommendation" },
+      { classification: "CITED", intent: "discovery" },
+      { classification: "MENTIONED", intent: "discovery" },
+      { classification: "ABSENT", intent: "comparison" },
     ]);
     expect(m.prompt_coverage).toBe(4);
     expect(m.visibility_rate).toBeCloseTo(0.75);
@@ -102,6 +107,22 @@ describe("computeMetrics", () => {
     const m = computeMetrics([]);
     expect(m.prompt_coverage).toBe(0);
     expect(m.visibility_rate).toBe(0);
+  });
+
+  it("summerar konkurrensomnämnanden", () => {
+    const m = computeMetrics([
+      {
+        classification: "ABSENT",
+        intent: "comparison",
+        competitor_mentions: [{ name: "Mews", count: 2 }],
+      },
+      {
+        classification: "MENTIONED",
+        intent: "discovery",
+        competitor_mentions: [{ name: "Mews", count: 1 }],
+      },
+    ]);
+    expect(m.competitor_share.find((c) => c.name === "Mews")?.count).toBe(3);
   });
 });
 
