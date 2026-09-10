@@ -45,7 +45,7 @@ function SharedReportPage() {
     );
   }
 
-  if (q.isError || !q.data) {
+  if (q.isError || !q.data || !q.data.found) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="max-w-md text-center">
