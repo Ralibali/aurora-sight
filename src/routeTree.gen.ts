@@ -14,8 +14,11 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as KontaktRouteImport } from './routes/kontakt'
 import { Route as PriserRouteImport } from './routes/priser'
+import { Route as AuthenticatedInstallningarRouteImport } from './routes/_authenticated/installningar'
 import { Route as AuthenticatedKlienterRouteImport } from './routes/_authenticated/klienter'
 import { Route as AuthenticatedOversiktRouteImport } from './routes/_authenticated/oversikt'
+import { Route as RapportTokenRouteImport } from './routes/rapport.$token'
+import { Route as AuthenticatedKorningRunIdRouteImport } from './routes/_authenticated/korning.$runId'
 import { Route as AuthenticatedVarumarkeBrandIdRouteImport } from './routes/_authenticated/varumarke.$brandId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -42,6 +45,12 @@ const PriserRoute = PriserRouteImport.update({
   path: '/priser',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedInstallningarRoute =
+  AuthenticatedInstallningarRouteImport.update({
+    id: '/installningar',
+    path: '/installningar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedKlienterRoute = AuthenticatedKlienterRouteImport.update({
   id: '/klienter',
   path: '/klienter',
@@ -52,6 +61,17 @@ const AuthenticatedOversiktRoute = AuthenticatedOversiktRouteImport.update({
   path: '/oversikt',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const RapportTokenRoute = RapportTokenRouteImport.update({
+  id: '/rapport/$token',
+  path: '/rapport/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedKorningRunIdRoute =
+  AuthenticatedKorningRunIdRouteImport.update({
+    id: '/korning/$runId',
+    path: '/korning/$runId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVarumarkeBrandIdRoute =
   AuthenticatedVarumarkeBrandIdRouteImport.update({
     id: '/varumarke/$brandId',
@@ -64,8 +84,11 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/kontakt': typeof KontaktRoute
   '/priser': typeof PriserRoute
+  '/installningar': typeof AuthenticatedInstallningarRoute
   '/klienter': typeof AuthenticatedKlienterRoute
   '/oversikt': typeof AuthenticatedOversiktRoute
+  '/rapport/$token': typeof RapportTokenRoute
+  '/korning/$runId': typeof AuthenticatedKorningRunIdRoute
   '/varumarke/$brandId': typeof AuthenticatedVarumarkeBrandIdRoute
 }
 export interface FileRoutesByTo {
@@ -73,8 +96,11 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/kontakt': typeof KontaktRoute
   '/priser': typeof PriserRoute
+  '/installningar': typeof AuthenticatedInstallningarRoute
   '/klienter': typeof AuthenticatedKlienterRoute
   '/oversikt': typeof AuthenticatedOversiktRoute
+  '/rapport/$token': typeof RapportTokenRoute
+  '/korning/$runId': typeof AuthenticatedKorningRunIdRoute
   '/varumarke/$brandId': typeof AuthenticatedVarumarkeBrandIdRoute
 }
 export interface FileRoutesById {
@@ -84,8 +110,11 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/kontakt': typeof KontaktRoute
   '/priser': typeof PriserRoute
+  '/_authenticated/installningar': typeof AuthenticatedInstallningarRoute
   '/_authenticated/klienter': typeof AuthenticatedKlienterRoute
   '/_authenticated/oversikt': typeof AuthenticatedOversiktRoute
+  '/rapport/$token': typeof RapportTokenRoute
+  '/_authenticated/korning/$runId': typeof AuthenticatedKorningRunIdRoute
   '/_authenticated/varumarke/$brandId': typeof AuthenticatedVarumarkeBrandIdRoute
 }
 export interface FileRouteTypes {
@@ -95,8 +124,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/kontakt'
     | '/priser'
+    | '/installningar'
     | '/klienter'
     | '/oversikt'
+    | '/rapport/$token'
+    | '/korning/$runId'
     | '/varumarke/$brandId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -104,8 +136,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/kontakt'
     | '/priser'
+    | '/installningar'
     | '/klienter'
     | '/oversikt'
+    | '/rapport/$token'
+    | '/korning/$runId'
     | '/varumarke/$brandId'
   id:
     | '__root__'
@@ -114,8 +149,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/kontakt'
     | '/priser'
+    | '/_authenticated/installningar'
     | '/_authenticated/klienter'
     | '/_authenticated/oversikt'
+    | '/rapport/$token'
+    | '/_authenticated/korning/$runId'
     | '/_authenticated/varumarke/$brandId'
   fileRoutesById: FileRoutesById
 }
@@ -125,6 +163,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   KontaktRoute: typeof KontaktRoute
   PriserRoute: typeof PriserRoute
+  RapportTokenRoute: typeof RapportTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -164,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PriserRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/installningar': {
+      id: '/_authenticated/installningar'
+      path: '/installningar'
+      fullPath: '/installningar'
+      preLoaderRoute: typeof AuthenticatedInstallningarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/klienter': {
       id: '/_authenticated/klienter'
       path: '/klienter'
@@ -178,6 +224,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOversiktRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/rapport/$token': {
+      id: '/rapport/$token'
+      path: '/rapport/$token'
+      fullPath: '/rapport/$token'
+      preLoaderRoute: typeof RapportTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/korning/$runId': {
+      id: '/_authenticated/korning/$runId'
+      path: '/korning/$runId'
+      fullPath: '/korning/$runId'
+      preLoaderRoute: typeof AuthenticatedKorningRunIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/varumarke/$brandId': {
       id: '/_authenticated/varumarke/$brandId'
       path: '/varumarke/$brandId'
@@ -189,14 +249,18 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedInstallningarRoute: typeof AuthenticatedInstallningarRoute
   AuthenticatedKlienterRoute: typeof AuthenticatedKlienterRoute
   AuthenticatedOversiktRoute: typeof AuthenticatedOversiktRoute
+  AuthenticatedKorningRunIdRoute: typeof AuthenticatedKorningRunIdRoute
   AuthenticatedVarumarkeBrandIdRoute: typeof AuthenticatedVarumarkeBrandIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedInstallningarRoute: AuthenticatedInstallningarRoute,
   AuthenticatedKlienterRoute: AuthenticatedKlienterRoute,
   AuthenticatedOversiktRoute: AuthenticatedOversiktRoute,
+  AuthenticatedKorningRunIdRoute: AuthenticatedKorningRunIdRoute,
   AuthenticatedVarumarkeBrandIdRoute: AuthenticatedVarumarkeBrandIdRoute,
 }
 
@@ -209,6 +273,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   KontaktRoute: KontaktRoute,
   PriserRoute: PriserRoute,
+  RapportTokenRoute: RapportTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

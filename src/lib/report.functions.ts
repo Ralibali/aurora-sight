@@ -41,7 +41,9 @@ export const getSharedReport = createServerFn({ method: "GET" })
     const { data: results } = report.run_id
       ? await supabaseAdmin
           .from("audit_results")
-          .select("id, prompt_text, intent, classification, classification_reason")
+          .select(
+            "id, prompt_text, intent, classification, classification_reason, competitor_mentions",
+          )
           .eq("run_id", report.run_id)
           .order("classification", { ascending: true })
       : { data: [] };
@@ -57,7 +59,7 @@ export const getSharedReport = createServerFn({ method: "GET" })
       ? (
           await supabaseAdmin
             .from("citations")
-            .select("url, domain, is_brand_domain, result_id")
+            .select("id, url, domain, is_brand_domain, result_id")
             .in("result_id", (results ?? []).map((r) => r.id))
         ).data
       : [];
