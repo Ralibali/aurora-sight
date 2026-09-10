@@ -16,6 +16,7 @@ import { Route as KontaktRouteImport } from './routes/kontakt'
 import { Route as PriserRouteImport } from './routes/priser'
 import { Route as AuthenticatedKlienterRouteImport } from './routes/_authenticated/klienter'
 import { Route as AuthenticatedOversiktRouteImport } from './routes/_authenticated/oversikt'
+import { Route as AuthenticatedVarumarkeBrandIdRouteImport } from './routes/_authenticated/varumarke.$brandId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -51,6 +52,12 @@ const AuthenticatedOversiktRoute = AuthenticatedOversiktRouteImport.update({
   path: '/oversikt',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedVarumarkeBrandIdRoute =
+  AuthenticatedVarumarkeBrandIdRouteImport.update({
+    id: '/varumarke/$brandId',
+    path: '/varumarke/$brandId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/priser': typeof PriserRoute
   '/klienter': typeof AuthenticatedKlienterRoute
   '/oversikt': typeof AuthenticatedOversiktRoute
+  '/varumarke/$brandId': typeof AuthenticatedVarumarkeBrandIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -67,6 +75,7 @@ export interface FileRoutesByTo {
   '/priser': typeof PriserRoute
   '/klienter': typeof AuthenticatedKlienterRoute
   '/oversikt': typeof AuthenticatedOversiktRoute
+  '/varumarke/$brandId': typeof AuthenticatedVarumarkeBrandIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,12 +86,27 @@ export interface FileRoutesById {
   '/priser': typeof PriserRoute
   '/_authenticated/klienter': typeof AuthenticatedKlienterRoute
   '/_authenticated/oversikt': typeof AuthenticatedOversiktRoute
+  '/_authenticated/varumarke/$brandId': typeof AuthenticatedVarumarkeBrandIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/kontakt' | '/priser' | '/klienter' | '/oversikt'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/kontakt'
+    | '/priser'
+    | '/klienter'
+    | '/oversikt'
+    | '/varumarke/$brandId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/kontakt' | '/priser' | '/klienter' | '/oversikt'
+  to:
+    | '/'
+    | '/auth'
+    | '/kontakt'
+    | '/priser'
+    | '/klienter'
+    | '/oversikt'
+    | '/varumarke/$brandId'
   id:
     | '__root__'
     | '/'
@@ -92,6 +116,7 @@ export interface FileRouteTypes {
     | '/priser'
     | '/_authenticated/klienter'
     | '/_authenticated/oversikt'
+    | '/_authenticated/varumarke/$brandId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -153,17 +178,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOversiktRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/varumarke/$brandId': {
+      id: '/_authenticated/varumarke/$brandId'
+      path: '/varumarke/$brandId'
+      fullPath: '/varumarke/$brandId'
+      preLoaderRoute: typeof AuthenticatedVarumarkeBrandIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedKlienterRoute: typeof AuthenticatedKlienterRoute
   AuthenticatedOversiktRoute: typeof AuthenticatedOversiktRoute
+  AuthenticatedVarumarkeBrandIdRoute: typeof AuthenticatedVarumarkeBrandIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKlienterRoute: AuthenticatedKlienterRoute,
   AuthenticatedOversiktRoute: AuthenticatedOversiktRoute,
+  AuthenticatedVarumarkeBrandIdRoute: AuthenticatedVarumarkeBrandIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
