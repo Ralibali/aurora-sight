@@ -59,3 +59,21 @@ reproducerbart manuellt steg med angivet förväntat resultat.
 | F2 | Åtgärder formuleras som hypoteser utan garantier | Textgranskning |
 | F3 | Rapporten kan skrivas ut till PDF med läsbar layout | Manuellt: utskriftsvy |
 | F4 | Delningslänk kan stängas av och slutar då fungera direkt | Manuellt |
+
+## Verifieringslogg 2026-09-10
+
+- `bunx tsgo --noEmit` – 0 fel.
+- `bunx vitest run` – 17/17 tester gröna (`src/lib/geo.test.ts`).
+- Publika sidor `/`, `/priser`, `/kontakt`, `/auth`, `/rapport/:token` – status 200, inga konsolfel.
+- Registrering skapar organisation + demodata automatiskt (3 varumärken, 24 prompter, 24 resultat, 3 insikter, 9 åtgärder, 3 rapporter).
+- Inloggad vy verifierad: översikt, klienter, inställningar, varumärkessida, körningssida med evidens.
+- Delning av rapport verifierad: `is_shared` sätts, publik länk renderar, ej delad token ger "Rapporten är inte tillgänglig".
+- Demoläge tydligt märkt överallt; live-körning blockerad utan `OPENROUTER_API_KEY`.
+
+### Accepterad kvarstående varning
+
+Databaslintern flaggar att inloggade användare kan köra fyra `SECURITY DEFINER`-funktioner
+(`has_role`, `is_aurora_admin`, `current_org_id`, `can_access_org`). Detta är avsiktligt:
+funktionerna används i RLS-policyer och måste därför vara körbara av rollen `authenticated`.
+De returnerar endast boolean respektive den anropande användarens egen `org_id` och exponerar
+ingen annan organisations data. Anon har inte EXECUTE. Omprövas i KIMI-paket "RLS/säkerhetsgranskning".
