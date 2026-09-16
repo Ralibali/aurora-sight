@@ -8,14 +8,15 @@ import {
   type Classification,
   type Intent,
 } from "@/lib/geo";
+import type { ProviderAdapter } from "@/lib/providers/types";
 
-/** Leverantörsstatus – avslöjar aldrig nyckelvärdet, bara om den finns. */
+/** Leverantörsstatus – avslöjar aldrig nyckelvärden, bara om de finns. */
 export const getProviderStatus = createServerFn({ method: "GET" }).handler(async () => {
-  const key = process.env["OPENROUTER_API_KEY"];
-  return {
-    openrouter: Boolean(key && key.length > 10),
-    liveEnabled: Boolean(key && key.length > 10),
-  };
+  const openRouterKey = process.env["OPENROUTER_API_KEY"];
+  const surfaceUrl = process.env["AURORA_SURFACE_PROVIDER_URL"];
+  const openrouter = Boolean(openRouterKey && openRouterKey.length > 10);
+  const surface = Boolean(surfaceUrl && surfaceUrl.startsWith("http"));
+  return { openrouter, surface, liveEnabled: openrouter || surface };
 });
 
 const RunInput = z.object({
@@ -28,17 +29,38 @@ const RunInput = z.object({
 
 type PromptRow = { id: string; text: string; intent: Intent };
 
+async function resolveProviderAdapter(provider: string): Promise<ProviderAdapter> {
+  const normalized = provider.trim().toLowerCase();
+  if (normalized === "surface" || normalized === "real_surface") {
+    const endpoint = process.env["AURORA_SURFACE_PROVIDER_URL"];
+    if (!endpoint) {
+      throw new Error(
+        "Real AI Surface kräver AURORA_SURFACE_PROVIDER_URL i serverns miljö. Lägg till endpointen under Projektinställningar → Secrets.",
+      );
+    }
+    const { createSurfaceAdapter } = await import("@/lib/providers/surface.server");
+    return createSurfaceAdapter(endpoint, process.env["AURORA_SURFACE_PROVIDER_TOKEN"]);
+  }
+
+  if (normalized !== "openrouter") {
+    throw new Error(`Okänd provider: ${provider}. Stödda providers är openrouter och surface.`);
+  }
+
+  const apiKey = process.env["OPENROUTER_API_KEY"];
+  if (!apiKey) {
+    throw new Error(
+      "Live-analys med OpenRouter kräver OPENROUTER_API_KEY i serverns miljö. Lägg till nyckeln under Projektinställningar → Secrets.",
+    );
+  }
+  const { createOpenRouterAdapter } = await import("@/lib/providers/openrouter.server");
+  return createOpenRouterAdapter(apiKey);
+}
+
 export const startAuditRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => RunInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const apiKey = process.env["OPENROUTER_API_KEY"];
-    if (!apiKey) {
-      throw new Error(
-        "Live-analys kräver OPENROUTER_API_KEY i serverns miljö. Lägg till nyckeln under Projektinställningar → Secrets.",
-      );
-    }
 
     const { data: brand, error: brandError } = await supabase
       .from("brands")
@@ -52,11 +74,23 @@ export const startAuditRun = createServerFn({ method: "POST" })
       .select("*")
       .eq("id", data.providerConfigId)
       .single();
-    if (providerError || !providerConfig) throw new Error("Modellkonfigurationen kunde inte läsas.");
+    if (providerError || !providerConfig) {
+      throw new Error("Modellkonfigurationen kunde inte läsas.");
+    }
 
-    if (data.searchMode === "native_search" && !providerConfig.supports_native_search) {
+    const providerName = String(providerConfig.provider ?? "openrouter").toLowerCase();
+    const isSurfaceProvider = providerName === "surface" || providerName === "real_surface";
+    const effectiveSearchMode = isSurfaceProvider ? "native_search" : data.searchMode;
+
+    if (
+      !isSurfaceProvider &&
+      effectiveSearchMode === "native_search" &&
+      !providerConfig.supports_native_search
+    ) {
       throw new Error("Den valda modellen stödjer inte leverantörens egen webbsökning.");
     }
+
+    const adapter = await resolveProviderAdapter(providerName);
 
     const { data: promptRows, error: promptError } = await supabase
       .from("prompts")
@@ -97,7 +131,7 @@ export const startAuditRun = createServerFn({ method: "POST" })
         provider: providerConfig.provider,
         model_id: providerConfig.model_id,
         model_label: providerConfig.model_label,
-        search_mode: data.searchMode,
+        search_mode: effectiveSearchMode,
         language: brand.language,
         country: brand.country,
         mode: "live",
@@ -108,9 +142,6 @@ export const startAuditRun = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (runError || !run) throw new Error("Körningen kunde inte skapas.");
-
-    const { createOpenRouterAdapter } = await import("@/lib/providers/openrouter.server");
-    const adapter = createOpenRouterAdapter(apiKey);
 
     const costIn = Number(providerConfig.est_cost_per_1k_in ?? 0);
     const costOut = Number(providerConfig.est_cost_per_1k_out ?? 0);
@@ -134,7 +165,7 @@ export const startAuditRun = createServerFn({ method: "POST" })
             modelId: providerConfig.model_id,
             language: brand.language,
             country: brand.country,
-            nativeSearch: data.searchMode === "native_search",
+            nativeSearch: effectiveSearchMode === "native_search",
           }),
         ),
       );
@@ -143,8 +174,7 @@ export const startAuditRun = createServerFn({ method: "POST" })
         const prompt = batch[j];
         const answer = answers[j];
         if (!prompt || !answer) continue;
-        const cost =
-          (answer.tokensIn / 1000) * costIn + (answer.tokensOut / 1000) * costOut;
+        const cost = (answer.tokensIn / 1000) * costIn + (answer.tokensOut / 1000) * costOut;
         totalCost += cost;
 
         if (answer.error) {
@@ -240,7 +270,12 @@ export const startAuditRun = createServerFn({ method: "POST" })
       action: "audit_run.completed",
       entity: "audit_runs",
       entity_id: run.id,
-      meta: { prompts: prompts.length, failed, model: providerConfig.model_id },
+      meta: {
+        prompts: prompts.length,
+        failed,
+        model: providerConfig.model_id,
+        provider: providerConfig.provider,
+      },
     });
 
     return { runId: run.id as string, completed, failed, metrics };
