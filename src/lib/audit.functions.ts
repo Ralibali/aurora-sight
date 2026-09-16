@@ -74,13 +74,24 @@ export const startAuditRun = createServerFn({ method: "POST" })
       .select("*")
       .eq("id", data.providerConfigId)
       .single();
-    if (providerError || !providerConfig) throw new Error("Modellkonfigurationen kunde inte läsas.");
+    if (providerError || !providerConfig) {
+      throw new Error("Modellkonfigurationen kunde inte läsas.");
+    }
 
-    if (data.searchMode === "native_search" && !providerConfig.supports_native_search) {
+    const providerName = String(providerConfig.provider ?? "openrouter").toLowerCase();
+    const isSurfaceProvider =
+      providerName === "surface" || providerName === "real_surface";
+    const effectiveSearchMode = isSurfaceProvider ? "native_search" : data.searchMode;
+
+    if (
+      !isSurfaceProvider &&
+      effectiveSearchMode === "native_search" &&
+      !providerConfig.supports_native_search
+    ) {
       throw new Error("Den valda modellen stödjer inte leverantörens egen webbsökning.");
     }
 
-    const adapter = await resolveProviderAdapter(String(providerConfig.provider ?? "openrouter"));
+    const adapter = await resolveProviderAdapter(providerName);
 
     const { data: promptRows, error: promptError } = await supabase
       .from("prompts")
@@ -121,7 +132,7 @@ export const startAuditRun = createServerFn({ method: "POST" })
         provider: providerConfig.provider,
         model_id: providerConfig.model_id,
         model_label: providerConfig.model_label,
-        search_mode: data.searchMode,
+        search_mode: effectiveSearchMode,
         language: brand.language,
         country: brand.country,
         mode: "live",
@@ -155,11 +166,7 @@ export const startAuditRun = createServerFn({ method: "POST" })
             modelId: providerConfig.model_id,
             language: brand.language,
             country: brand.country,
-            nativeSearch:
-              String(providerConfig.provider).toLowerCase() === "surface" ||
-              String(providerConfig.provider).toLowerCase() === "real_surface"
-                ? true
-                : data.searchMode === "native_search",
+            nativeSearch: effectiveSearchMode === "native_search",
           }),
         ),
       );
