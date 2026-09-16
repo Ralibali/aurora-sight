@@ -79,8 +79,7 @@ export const startAuditRun = createServerFn({ method: "POST" })
     }
 
     const providerName = String(providerConfig.provider ?? "openrouter").toLowerCase();
-    const isSurfaceProvider =
-      providerName === "surface" || providerName === "real_surface";
+    const isSurfaceProvider = providerName === "surface" || providerName === "real_surface";
     const effectiveSearchMode = isSurfaceProvider ? "native_search" : data.searchMode;
 
     if (
@@ -175,8 +174,7 @@ export const startAuditRun = createServerFn({ method: "POST" })
         const prompt = batch[j];
         const answer = answers[j];
         if (!prompt || !answer) continue;
-        const cost =
-          (answer.tokensIn / 1000) * costIn + (answer.tokensOut / 1000) * costOut;
+        const cost = (answer.tokensIn / 1000) * costIn + (answer.tokensOut / 1000) * costOut;
         totalCost += cost;
 
         if (answer.error) {
