@@ -103,7 +103,10 @@ export function createSurfaceAdapter(endpoint: string, token?: string | null): P
         const tokensIn =
           payload.tokensIn ?? payload.usage?.input_tokens ?? payload.usage?.prompt_tokens ?? 0;
         const tokensOut =
-          payload.tokensOut ?? payload.usage?.output_tokens ?? payload.usage?.completion_tokens ?? 0;
+          payload.tokensOut ??
+          payload.usage?.output_tokens ??
+          payload.usage?.completion_tokens ??
+          0;
 
         if (!answer.trim()) {
           return {
