@@ -66,10 +66,7 @@ function SettingsPage() {
   });
 
   return (
-    <AppShell
-      title="Inställningar"
-      description="Modeller, priser, abonnemang och nyckelstatus."
-    >
+    <AppShell title="Inställningar" description="Modeller, priser, abonnemang och nyckelstatus.">
       <div className="space-y-6">
         <Card className="card-soft">
           <CardHeader>
@@ -91,7 +88,6 @@ function SettingsPage() {
                 gränssnittet eller i databasen.
               </div>
             )}
-
           </CardContent>
         </Card>
 

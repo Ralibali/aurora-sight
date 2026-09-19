@@ -5,12 +5,7 @@
 
 export type Classification = "RECOMMENDED" | "CITED" | "MENTIONED" | "ABSENT";
 export type Intent =
-  | "discovery"
-  | "comparison"
-  | "recommendation"
-  | "local_buyer"
-  | "branded"
-  | "problem_solution";
+  "discovery" | "comparison" | "recommendation" | "local_buyer" | "branded" | "problem_solution";
 
 export const INTENT_LABELS: Record<Intent, string> = {
   discovery: "Upptäckt",

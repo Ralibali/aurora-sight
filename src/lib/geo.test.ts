@@ -56,9 +56,7 @@ describe("classifyAnswer", () => {
   });
 
   it("ger CITED när svaret länkar till varumärkets domän", () => {
-    const out = classifyAnswer(
-      input("Stayboost finns beskrivet här: https://stayboost.se/om-oss"),
-    );
+    const out = classifyAnswer(input("Stayboost finns beskrivet här: https://stayboost.se/om-oss"));
     expect(out.classification).toBe("CITED");
   });
 

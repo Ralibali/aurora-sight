@@ -82,8 +82,8 @@ function OverviewPage() {
     >
       {providerStatus.isLoading ? null : live ? (
         <div className="mb-6 rounded-lg border border-rec/40 bg-rec/10 px-4 py-3 text-sm">
-          <span className="font-semibold">Live-läge aktivt.</span> OPENROUTER_API_KEY är konfigurerad
-          – riktiga analyser kan köras.
+          <span className="font-semibold">Live-läge aktivt.</span> OPENROUTER_API_KEY är
+          konfigurerad – riktiga analyser kan köras.
         </div>
       ) : (
         <div className="mb-6 flex flex-wrap items-start gap-3 rounded-lg border border-demo/50 bg-demo/15 px-4 py-3 text-sm">
@@ -110,18 +110,29 @@ function OverviewPage() {
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {[
-              { label: "Varumärken", value: d?.brands.length ?? 0, hint: `${d?.clients.length ?? 0} klienter` },
+              {
+                label: "Varumärken",
+                value: d?.brands.length ?? 0,
+                hint: `${d?.clients.length ?? 0} klienter`,
+              },
               {
                 label: "MRR (aktiva abonnemang)",
                 value: `${mrr.toLocaleString("sv-SE")} kr`,
-                hint: demoMrr > 0 ? `${demoMrr.toLocaleString("sv-SE")} kr i demo/ej aktiverat` : "Inga demoposter",
+                hint:
+                  demoMrr > 0
+                    ? `${demoMrr.toLocaleString("sv-SE")} kr i demo/ej aktiverat`
+                    : "Inga demoposter",
               },
               {
                 label: "Aktiva bevakningar",
                 value: activeMonitors,
                 hint: overdue > 0 ? `${overdue} försenade` : "Inga försenade",
               },
-              { label: "Öppna åtgärder", value: openActions, hint: `${liveRuns} live-körningar totalt` },
+              {
+                label: "Öppna åtgärder",
+                value: openActions,
+                hint: `${liveRuns} live-körningar totalt`,
+              },
             ].map((card) => (
               <Card key={card.label} className="card-soft">
                 <CardHeader className="pb-2">
@@ -206,7 +217,9 @@ function OverviewPage() {
                       ) : null}
                     </span>
                     {brand.is_demo ? (
-                      <Badge className="border-transparent bg-demo text-demo-foreground">DEMO</Badge>
+                      <Badge className="border-transparent bg-demo text-demo-foreground">
+                        DEMO
+                      </Badge>
                     ) : null}
                   </Link>
                 ))}

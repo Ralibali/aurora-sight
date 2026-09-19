@@ -31,12 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  INTENT_LABELS,
-  MAX_PROMPTS_PER_RUN,
-  comparabilityIssues,
-  type Intent,
-} from "@/lib/geo";
+import { INTENT_LABELS, MAX_PROMPTS_PER_RUN, comparabilityIssues, type Intent } from "@/lib/geo";
 import { AlertTriangle, ArrowRight, Plus, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/varumarke/$brandId")({
@@ -57,7 +52,11 @@ function BrandPage() {
     searchMode: "offline" as "offline" | "native_search",
     label: "",
   });
-  const [newPrompt, setNewPrompt] = useState({ text: "", intent: "discovery" as Intent, setId: "" });
+  const [newPrompt, setNewPrompt] = useState({
+    text: "",
+    intent: "discovery" as Intent,
+    setId: "",
+  });
   const [newCompetitor, setNewCompetitor] = useState("");
 
   const providerStatus = useQuery({
@@ -609,8 +608,8 @@ function BrandPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Bekräfta live-körning</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {selectedSetPrompts.length} prompter skickas till modellen. Detta kostar pengar hos
-                  leverantören. Vill du fortsätta?
+                  {selectedSetPrompts.length} prompter skickas till modellen. Detta kostar pengar
+                  hos leverantören. Vill du fortsätta?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

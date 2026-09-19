@@ -64,13 +64,13 @@ function PricingPage() {
               >
                 <CardHeader>
                   {plan.highlight ? (
-                    <Badge className="mb-2 w-fit bg-accent text-accent-foreground">Populärast</Badge>
+                    <Badge className="mb-2 w-fit bg-accent text-accent-foreground">
+                      Populärast
+                    </Badge>
                   ) : null}
                   <CardTitle className="text-lg">{plan.name}</CardTitle>
                   <p className="mt-3 text-3xl font-semibold">
-                    {plan.is_contact
-                      ? "Offert"
-                      : `${plan.price_sek.toLocaleString("sv-SE")} kr`}
+                    {plan.is_contact ? "Offert" : `${plan.price_sek.toLocaleString("sv-SE")} kr`}
                     {!plan.is_contact && plan.interval === "month" ? (
                       <span className="text-base font-normal text-muted-foreground">/mån</span>
                     ) : null}

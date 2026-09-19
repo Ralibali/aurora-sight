@@ -44,7 +44,11 @@ function RunPage() {
           .eq("run_id", runId)
           .order("created_at", { ascending: true }),
         run
-          ? supabase.from("brands").select("id, name, domain, is_demo").eq("id", run.brand_id).single()
+          ? supabase
+              .from("brands")
+              .select("id, name, domain, is_demo")
+              .eq("id", run.brand_id)
+              .single()
           : Promise.resolve({ data: null }),
         supabase.from("findings").select("*").eq("run_id", runId),
         supabase
@@ -257,15 +261,17 @@ function RunPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <ClassificationBadge value={r.classification as Classification} />
-                      <Button variant="ghost" size="sm" onClick={() => setOpenId(open ? null : r.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOpenId(open ? null : r.id)}
+                      >
                         {open ? "Dölj evidens" : "Visa evidens"}
                       </Button>
                     </div>
                   </div>
 
-                  {r.error ? (
-                    <p className="mt-3 text-sm text-destructive">Fel: {r.error}</p>
-                  ) : null}
+                  {r.error ? <p className="mt-3 text-sm text-destructive">Fel: {r.error}</p> : null}
 
                   {open ? (
                     <div className="mt-4 space-y-4 border-t border-border/70 pt-4">

@@ -60,7 +60,10 @@ export const getSharedReport = createServerFn({ method: "GET" })
           await supabaseAdmin
             .from("citations")
             .select("id, url, domain, is_brand_domain, result_id")
-            .in("result_id", (results ?? []).map((r) => r.id))
+            .in(
+              "result_id",
+              (results ?? []).map((r) => r.id),
+            )
         ).data
       : [];
 

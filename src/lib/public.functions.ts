@@ -58,14 +58,16 @@ const LeadInput = z.object({
 export const submitLead = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => LeadInput.parse(input))
   .handler(async ({ data }) => {
-    const { error } = await publicClient().from("leads").insert({
-      name: data.name,
-      email: data.email,
-      company: data.company || null,
-      website: data.website || null,
-      plan_interest: data.plan_interest || null,
-      message: data.message || null,
-    });
+    const { error } = await publicClient()
+      .from("leads")
+      .insert({
+        name: data.name,
+        email: data.email,
+        company: data.company || null,
+        website: data.website || null,
+        plan_interest: data.plan_interest || null,
+        message: data.message || null,
+      });
     if (error) throw new Error("Förfrågan kunde inte skickas just nu. Försök igen.");
     return { ok: true };
   });

@@ -33,8 +33,8 @@ export function SiteFooter() {
         <div>
           <p className="text-sm font-semibold">Transparens</p>
           <p className="mt-3 text-sm text-muted-foreground">
-            Alla slutsatser bygger på faktiska modellsvar via API. Vi skrapar inte konsumentgränssnitt
-            och lovar aldrig garanterade placeringar.
+            Alla slutsatser bygger på faktiska modellsvar via API. Vi skrapar inte
+            konsumentgränssnitt och lovar aldrig garanterade placeringar.
           </p>
         </div>
       </div>

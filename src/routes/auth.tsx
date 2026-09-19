@@ -16,7 +16,8 @@ export const Route = createFileRoute("/auth")({
       { title: "Logga in – Aurora GEO" },
       {
         name: "description",
-        content: "Logga in i Aurora GEO för att se AI-synlighet, evidens och åtgärder för dina varumärken.",
+        content:
+          "Logga in i Aurora GEO för att se AI-synlighet, evidens och åtgärder för dina varumärken.",
       },
       { property: "og:title", content: "Logga in – Aurora GEO" },
       { property: "og:description", content: "Åtkomst till Aurora GEO-dashboarden." },

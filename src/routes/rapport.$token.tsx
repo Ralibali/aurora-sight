@@ -13,7 +13,8 @@ export const Route = createFileRoute("/rapport/$token")({
       { title: "AI-synlighetsrapport – Aurora GEO" },
       {
         name: "description",
-        content: "Delad AI-synlighetsrapport från Aurora GEO med evidens och prioriterade åtgärder.",
+        content:
+          "Delad AI-synlighetsrapport från Aurora GEO med evidens och prioriterade åtgärder.",
       },
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "AI-synlighetsrapport – Aurora GEO" },
