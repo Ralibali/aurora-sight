@@ -88,6 +88,13 @@ function ContactPage() {
               Berätta kort om varumärket och marknaden. Vi återkommer med förslag på köpprompter,
               modeller och tidplan – samt vad analysen kostar i ert fall.
             </p>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Du kan också mejla{" "}
+              <a href="mailto:info@auroramedia.se" className="underline">
+                info@auroramedia.se
+              </a>
+              .
+            </p>
             <ul className="mt-8 space-y-3 text-sm text-muted-foreground">
               {[
                 "Svar inom en arbetsdag",

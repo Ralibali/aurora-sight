@@ -189,6 +189,12 @@ function AuthPage() {
                 </form>
               </TabsContent>
             </Tabs>
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              Behöver du hjälp?{" "}
+              <a href="mailto:info@auroramedia.se" className="underline">
+                info@auroramedia.se
+              </a>
+            </p>
           </CardContent>
         </Card>
       </main>

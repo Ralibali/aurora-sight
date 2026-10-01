@@ -36,6 +36,11 @@ export function SiteFooter() {
             Alla slutsatser bygger på faktiska modellsvar via API. Vi skrapar inte
             konsumentgränssnitt och lovar aldrig garanterade placeringar.
           </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            <a href="mailto:info@auroramedia.se" className="underline hover:text-foreground">
+              info@auroramedia.se
+            </a>
+          </p>
         </div>
       </div>
       <div className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
