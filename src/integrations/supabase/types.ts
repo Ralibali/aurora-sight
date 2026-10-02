@@ -877,11 +877,17 @@ export type Database = {
           created_at: string;
           enabled: boolean;
           id: string;
+          last_error: string | null;
+          last_error_at: string | null;
           last_run_at: string | null;
+          last_run_id: string | null;
           model_id: string | null;
           next_run_at: string | null;
           org_id: string;
           prompt_set_id: string | null;
+          provider_config_id: string | null;
+          running_at: string | null;
+          search_mode: Database["public"]["Enums"]["search_mode"];
         };
         Insert: {
           brand_id: string;
@@ -889,11 +895,17 @@ export type Database = {
           created_at?: string;
           enabled?: boolean;
           id?: string;
+          last_error?: string | null;
+          last_error_at?: string | null;
           last_run_at?: string | null;
+          last_run_id?: string | null;
           model_id?: string | null;
           next_run_at?: string | null;
           org_id: string;
           prompt_set_id?: string | null;
+          provider_config_id?: string | null;
+          running_at?: string | null;
+          search_mode?: Database["public"]["Enums"]["search_mode"];
         };
         Update: {
           brand_id?: string;
@@ -901,11 +913,17 @@ export type Database = {
           created_at?: string;
           enabled?: boolean;
           id?: string;
+          last_error?: string | null;
+          last_error_at?: string | null;
           last_run_at?: string | null;
+          last_run_id?: string | null;
           model_id?: string | null;
           next_run_at?: string | null;
           org_id?: string;
           prompt_set_id?: string | null;
+          provider_config_id?: string | null;
+          running_at?: string | null;
+          search_mode?: Database["public"]["Enums"]["search_mode"];
         };
         Relationships: [
           {
@@ -913,6 +931,13 @@ export type Database = {
             columns: ["brand_id"];
             isOneToOne: false;
             referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "schedules_last_run_id_fkey";
+            columns: ["last_run_id"];
+            isOneToOne: false;
+            referencedRelation: "audit_runs";
             referencedColumns: ["id"];
           },
           {
@@ -927,6 +952,13 @@ export type Database = {
             columns: ["prompt_set_id"];
             isOneToOne: false;
             referencedRelation: "prompt_sets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "schedules_provider_config_id_fkey";
+            columns: ["provider_config_id"];
+            isOneToOne: false;
+            referencedRelation: "provider_configs";
             referencedColumns: ["id"];
           },
         ];
@@ -1009,6 +1041,10 @@ export type Database = {
     };
     Functions: {
       can_access_org: { Args: { _org_id: string }; Returns: boolean };
+      claim_due_sight_schedules: {
+        Args: { p_limit?: number };
+        Returns: Database["public"]["Tables"]["schedules"]["Row"][];
+      };
       current_org_id: { Args: never; Returns: string };
       has_role: {
         Args: {

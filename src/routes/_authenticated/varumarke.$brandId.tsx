@@ -1,9 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getProviderStatus, startAuditRun, generateFindings } from "@/lib/audit.functions";
+import {
+  generateFindings,
+  getMonitorWorkerStatus,
+  getProviderStatus,
+  startAuditRun,
+} from "@/lib/audit.functions";
 import { AppShell } from "@/components/app/app-shell";
 import { ModeBadge } from "@/components/shared/badges";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { INTENT_LABELS, MAX_PROMPTS_PER_RUN, comparabilityIssues, type Intent } from "@/lib/geo";
+import { scheduleStatus, type MonitorCadence } from "@/lib/schedule";
 import { AlertTriangle, ArrowRight, Plus, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/varumarke/$brandId")({
@@ -58,36 +64,53 @@ function BrandPage() {
     setId: "",
   });
   const [newCompetitor, setNewCompetitor] = useState("");
+  const [scheduleForm, setScheduleForm] = useState({
+    cadence: "monthly" as MonitorCadence,
+    promptSetId: "",
+    providerConfigId: "",
+    searchMode: "native_search" as "offline" | "native_search",
+  });
 
   const providerStatus = useQuery({
     queryKey: ["provider-status"],
     queryFn: () => getProviderStatus(),
   });
 
+  const monitorWorkerStatus = useQuery({
+    queryKey: ["monitor-worker-status"],
+    queryFn: () => getMonitorWorkerStatus(),
+  });
+
   const q = useQuery({
     queryKey: ["brand", brandId],
     queryFn: async () => {
-      const [brand, sets, competitors, runs, providers, actions, reports] = await Promise.all([
-        supabase.from("brands").select("*").eq("id", brandId).single(),
-        supabase.from("prompt_sets").select("id, name, description").eq("brand_id", brandId),
-        supabase.from("competitors").select("id, name, domain").eq("brand_id", brandId),
-        supabase
-          .from("audit_runs")
-          .select("*")
-          .eq("brand_id", brandId)
-          .order("started_at", { ascending: false }),
-        supabase.from("provider_configs").select("*").eq("enabled", true),
-        supabase
-          .from("actions")
-          .select("id, title, category, rationale, priority, status, finding_id")
-          .eq("brand_id", brandId)
-          .order("priority"),
-        supabase
-          .from("reports")
-          .select("id, title, run_id, is_shared, share_token, created_at")
-          .eq("brand_id", brandId)
-          .order("created_at", { ascending: false }),
-      ]);
+      const [brand, sets, competitors, runs, providers, actions, reports, schedules] =
+        await Promise.all([
+          supabase.from("brands").select("*").eq("id", brandId).single(),
+          supabase.from("prompt_sets").select("id, name, description").eq("brand_id", brandId),
+          supabase.from("competitors").select("id, name, domain").eq("brand_id", brandId),
+          supabase
+            .from("audit_runs")
+            .select("*")
+            .eq("brand_id", brandId)
+            .order("started_at", { ascending: false }),
+          supabase.from("provider_configs").select("*").eq("enabled", true),
+          supabase
+            .from("actions")
+            .select("id, title, category, rationale, priority, status, finding_id")
+            .eq("brand_id", brandId)
+            .order("priority"),
+          supabase
+            .from("reports")
+            .select("id, title, run_id, is_shared, share_token, created_at")
+            .eq("brand_id", brandId)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("schedules")
+            .select("*")
+            .eq("brand_id", brandId)
+            .order("created_at", { ascending: true }),
+        ]);
       const setIds = (sets.data ?? []).map((s) => s.id);
       const prompts = setIds.length
         ? ((
@@ -106,6 +129,7 @@ function BrandPage() {
         providers: providers.data ?? [],
         actions: actions.data ?? [],
         reports: reports.data ?? [],
+        schedules: schedules.data ?? [],
       };
     },
   });
@@ -136,6 +160,32 @@ function BrandPage() {
           },
         )
       : [];
+
+  const monitorSchedule = q.data?.schedules?.[0] ?? null;
+  const monitorStatus = monitorSchedule
+    ? scheduleStatus({
+        enabled: monitorSchedule.enabled,
+        runningAt: monitorSchedule.running_at,
+        nextRunAt: monitorSchedule.next_run_at,
+        lastError: monitorSchedule.last_error,
+      })
+    : "paused";
+
+  useEffect(() => {
+    if (!q.data) return;
+    const schedule = q.data.schedules?.[0];
+    const firstSet = q.data.sets?.[0];
+    const preferredProvider =
+      q.data.providers.find((provider) => provider.supports_native_search) ?? q.data.providers[0];
+    setScheduleForm({
+      cadence: (schedule?.cadence as MonitorCadence | undefined) ?? "monthly",
+      promptSetId: schedule?.prompt_set_id ?? firstSet?.id ?? "",
+      providerConfigId: schedule?.provider_config_id ?? preferredProvider?.id ?? "",
+      searchMode:
+        schedule?.search_mode ??
+        (preferredProvider?.supports_native_search ? "native_search" : "offline"),
+    });
+  }, [q.data]);
 
   const selectedSetPrompts = (q.data?.prompts ?? []).filter(
     (p) => p.prompt_set_id === runConfig.promptSetId && p.enabled,
@@ -211,6 +261,68 @@ function BrandPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["brand", brandId] }),
   });
 
+  const saveSchedule = useMutation({
+    mutationFn: async ({ runNow = false }: { runNow?: boolean } = {}) => {
+      if (!brand) throw new Error("Varumärket saknas.");
+      if (!monitorWorkerStatus.data?.configured) {
+        throw new Error("Automatisk worker är inte konfigurerad ännu.");
+      }
+      const provider = q.data?.providers.find((item) => item.id === scheduleForm.providerConfigId);
+      if (!scheduleForm.promptSetId || !provider) {
+        throw new Error("Välj promptgrupp och modell för bevakningen.");
+      }
+      const searchMode =
+        scheduleForm.searchMode === "native_search" && !provider.supports_native_search
+          ? "offline"
+          : scheduleForm.searchMode;
+      const payload = {
+        org_id: brand.org_id,
+        brand_id: brandId,
+        prompt_set_id: scheduleForm.promptSetId,
+        provider_config_id: provider.id,
+        model_id: provider.model_id,
+        cadence: scheduleForm.cadence,
+        search_mode: searchMode,
+        enabled: true,
+        next_run_at: runNow
+          ? new Date().toISOString()
+          : (monitorSchedule?.next_run_at ?? new Date().toISOString()),
+        running_at: null,
+        last_error: null,
+        last_error_at: null,
+      };
+      const result = monitorSchedule
+        ? await supabase.from("schedules").update(payload).eq("id", monitorSchedule.id)
+        : await supabase.from("schedules").insert(payload);
+      if (result.error) throw new Error("Bevakningen kunde inte sparas.");
+    },
+    onSuccess: (_, variables) => {
+      toast.success(
+        variables?.runNow
+          ? "Bevakningen är köad för nästa worker-körning."
+          : "Bevakningen är aktiv.",
+      );
+      qc.invalidateQueries({ queryKey: ["brand", brandId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const pauseSchedule = useMutation({
+    mutationFn: async () => {
+      if (!monitorSchedule) return;
+      const { error } = await supabase
+        .from("schedules")
+        .update({ enabled: false, running_at: null })
+        .eq("id", monitorSchedule.id);
+      if (error) throw new Error("Bevakningen kunde inte pausas.");
+    },
+    onSuccess: () => {
+      toast.success("Bevakningen är pausad.");
+      qc.invalidateQueries({ queryKey: ["brand", brandId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const updateAction = useMutation({
     mutationFn: async ({
       id,
@@ -253,6 +365,7 @@ function BrandPage() {
           <TabsTrigger value="prompts">Prompter</TabsTrigger>
           <TabsTrigger value="competitors">Konkurrenter</TabsTrigger>
           <TabsTrigger value="run">Ny körning</TabsTrigger>
+          <TabsTrigger value="monitor">Bevakning</TabsTrigger>
           <TabsTrigger value="actions">Åtgärder</TabsTrigger>
           <TabsTrigger value="reports">Rapporter</TabsTrigger>
         </TabsList>
@@ -620,6 +733,217 @@ function BrandPage() {
           </AlertDialog>
         </TabsContent>
 
+        <TabsContent value="monitor" className="mt-6 space-y-6">
+          <Card className="card-soft">
+            <CardHeader>
+              <CardTitle className="text-base">Automatisk AI-bevakning</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Kör samma evidensbaserade analys återkommande. Varje körning sparar råsvar, källor,
+                modell, sökläge och kostnad så att förändringar kan jämföras på samma villkor.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {!monitorWorkerStatus.isLoading && !monitorWorkerStatus.data?.configured ? (
+                <div className="flex items-start gap-2 rounded-lg border border-mentioned/50 bg-mentioned/15 px-4 py-3 text-sm">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <div>
+                    <p className="font-medium">Automatisk worker är inte aktiverad.</p>
+                    <p className="mt-1 text-muted-foreground">
+                      Sätt AURORA_MONITOR_CRON_SECRET och scheduler innan bevakning kan aktiveras.
+                      Manuella AI-körningar påverkas inte.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <MonitorMetric
+                  label="Status"
+                  value={
+                    {
+                      paused: "Pausad",
+                      running: "Kör nu",
+                      error: "Fel",
+                      due: "Väntar på worker",
+                      scheduled: "Schemalagd",
+                    }[monitorStatus]
+                  }
+                />
+                <MonitorMetric
+                  label="Nästa körning"
+                  value={
+                    monitorSchedule?.next_run_at
+                      ? new Date(monitorSchedule.next_run_at).toLocaleString("sv-SE")
+                      : "Inte satt"
+                  }
+                />
+                <MonitorMetric
+                  label="Senaste körning"
+                  value={
+                    monitorSchedule?.last_run_at
+                      ? new Date(monitorSchedule.last_run_at).toLocaleString("sv-SE")
+                      : "Ingen ännu"
+                  }
+                />
+                <MonitorMetric
+                  label="Intervall"
+                  value={
+                    scheduleForm.cadence === "daily"
+                      ? "Dagligen"
+                      : scheduleForm.cadence === "weekly"
+                        ? "Varje vecka"
+                        : "Varje månad"
+                  }
+                />
+              </div>
+
+              {monitorSchedule?.last_error ? (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                  Senaste fel: {monitorSchedule.last_error}
+                  {monitorSchedule.last_error_at ? (
+                    <span className="ml-2 text-xs opacity-70">
+                      {new Date(monitorSchedule.last_error_at).toLocaleString("sv-SE")}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <Label>Intervall</Label>
+                  <Select
+                    value={scheduleForm.cadence}
+                    onValueChange={(value) =>
+                      setScheduleForm((form) => ({ ...form, cadence: value as MonitorCadence }))
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Dagligen</SelectItem>
+                      <SelectItem value="weekly">Varje vecka</SelectItem>
+                      <SelectItem value="monthly">Varje månad</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Promptgrupp</Label>
+                  <Select
+                    value={scheduleForm.promptSetId}
+                    onValueChange={(value) =>
+                      setScheduleForm((form) => ({ ...form, promptSetId: value }))
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Välj promptgrupp" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(q.data?.sets ?? []).map((set) => (
+                        <SelectItem key={set.id} value={set.id}>
+                          {set.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Modell / provider</Label>
+                  <Select
+                    value={scheduleForm.providerConfigId}
+                    onValueChange={(value) => {
+                      const provider = q.data?.providers.find((item) => item.id === value);
+                      setScheduleForm((form) => ({
+                        ...form,
+                        providerConfigId: value,
+                        searchMode: provider?.supports_native_search ? form.searchMode : "offline",
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Välj modell" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(q.data?.providers ?? []).map((provider) => (
+                        <SelectItem key={provider.id} value={provider.id}>
+                          {provider.model_label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Sökläge</Label>
+                  <Select
+                    value={scheduleForm.searchMode}
+                    onValueChange={(value) =>
+                      setScheduleForm((form) => ({
+                        ...form,
+                        searchMode: value as "offline" | "native_search",
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="offline">Utan webbsök</SelectItem>
+                      <SelectItem value="native_search">Provider-native webbsök</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={() => saveSchedule.mutate({ runNow: false })}
+                  disabled={
+                    saveSchedule.isPending ||
+                    !scheduleForm.promptSetId ||
+                    !scheduleForm.providerConfigId ||
+                    !monitorWorkerStatus.data?.configured
+                  }
+                >
+                  {monitorSchedule?.enabled ? "Spara bevakning" : "Aktivera bevakning"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => saveSchedule.mutate({ runNow: true })}
+                  disabled={
+                    saveSchedule.isPending ||
+                    !scheduleForm.promptSetId ||
+                    !scheduleForm.providerConfigId ||
+                    !monitorWorkerStatus.data?.configured
+                  }
+                >
+                  Köa körning nu
+                </Button>
+                {monitorSchedule?.enabled ? (
+                  <Button
+                    variant="ghost"
+                    onClick={() => pauseSchedule.mutate()}
+                    disabled={pauseSchedule.isPending}
+                  >
+                    Pausa
+                  </Button>
+                ) : null}
+                {monitorSchedule?.last_run_id ? (
+                  <Button variant="ghost" asChild>
+                    <Link to="/korning/$runId" params={{ runId: monitorSchedule.last_run_id }}>
+                      Öppna senaste automatiska körning
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Worker-endpointen använder separat serverhemlighet och service-role. Kundens browser
+                kan inte trigga eller claima andra organisationers scheman.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="actions" className="mt-6 space-y-4">
           {latest ? (
             <Button
@@ -714,6 +1038,15 @@ function BrandPage() {
         </TabsContent>
       </Tabs>
     </AppShell>
+  );
+}
+
+function MonitorMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border/70 bg-background px-4 py-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-medium">{value}</p>
+    </div>
   );
 }
 
