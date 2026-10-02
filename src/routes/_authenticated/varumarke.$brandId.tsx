@@ -166,8 +166,7 @@ function BrandPage() {
     const schedule = q.data.schedules?.[0];
     const firstSet = q.data.sets?.[0];
     const preferredProvider =
-      q.data.providers.find((provider) => provider.supports_native_search) ??
-      q.data.providers[0];
+      q.data.providers.find((provider) => provider.supports_native_search) ?? q.data.providers[0];
     setScheduleForm({
       cadence: (schedule?.cadence as MonitorCadence | undefined) ?? "monthly",
       promptSetId: schedule?.prompt_set_id ?? firstSet?.id ?? "",
