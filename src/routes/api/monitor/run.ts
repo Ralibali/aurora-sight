@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
 import { executeAuditRun } from "@/lib/audit-runner.server";
+import { nextScheduleRun } from "@/lib/schedule";
 
 type ClaimedSchedule = {
   id: string;
@@ -20,15 +21,6 @@ function secureEqual(a: string, b: string) {
     diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
   }
   return a.length > 0 && b.length > 0 && diff === 0;
-}
-
-function nextRun(cadence: string, from = new Date()) {
-  const next = new Date(from);
-  if (cadence === "daily") next.setUTCDate(next.getUTCDate() + 1);
-  else if (cadence === "weekly") next.setUTCDate(next.getUTCDate() + 7);
-  else if (cadence === "monthly") next.setUTCMonth(next.getUTCMonth() + 1);
-  else throw new Error(`Ogiltig cadence: ${cadence}`);
-  return next.toISOString();
 }
 
 export const Route = createFileRoute("/api/monitor/run")({
@@ -122,7 +114,7 @@ export const Route = createFileRoute("/api/monitor/run")({
                 running_at: null,
                 last_run_at: now.toISOString(),
                 last_run_id: run.runId,
-                next_run_at: nextRun(schedule.cadence, now),
+                next_run_at: nextScheduleRun(schedule.cadence, now),
                 last_error: null,
                 last_error_at: null,
               })
