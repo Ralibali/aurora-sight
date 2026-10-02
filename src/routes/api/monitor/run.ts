@@ -121,8 +121,7 @@ export const Route = createFileRoute("/api/monitor/run")({
             if (updateError) throw updateError;
             completed += 1;
           } catch (error) {
-            const message =
-              error instanceof Error ? error.message.slice(0, 1000) : "Okänt fel.";
+            const message = error instanceof Error ? error.message.slice(0, 1000) : "Okänt fel.";
             errors.push(message);
             await db
               .from("schedules")
