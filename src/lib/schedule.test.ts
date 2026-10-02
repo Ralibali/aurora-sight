@@ -9,8 +9,9 @@ describe("nextScheduleRun", () => {
   });
 
   it("advances monthly schedules", () => {
-    expect(nextScheduleRun("monthly", new Date("2026-10-02T07:00:00.000Z")))
-      .toBe("2026-11-02T07:00:00.000Z");
+    expect(nextScheduleRun("monthly", new Date("2026-10-02T07:00:00.000Z"))).toBe(
+      "2026-11-02T07:00:00.000Z",
+    );
   });
 
   it("rejects unknown cadence", () => {
@@ -23,9 +24,13 @@ describe("scheduleStatus", () => {
 
   it("distinguishes paused, running, due and scheduled", () => {
     expect(scheduleStatus({ enabled: false, now })).toBe("paused");
-    expect(scheduleStatus({ enabled: true, runningAt: "2026-10-02T06:59:00Z", now })).toBe("running");
+    expect(scheduleStatus({ enabled: true, runningAt: "2026-10-02T06:59:00Z", now })).toBe(
+      "running",
+    );
     expect(scheduleStatus({ enabled: true, nextRunAt: "2026-10-02T06:00:00Z", now })).toBe("due");
-    expect(scheduleStatus({ enabled: true, nextRunAt: "2026-10-03T06:00:00Z", now })).toBe("scheduled");
+    expect(scheduleStatus({ enabled: true, nextRunAt: "2026-10-03T06:00:00Z", now })).toBe(
+      "scheduled",
+    );
   });
 
   it("surfaces the last error when no run is active", () => {
