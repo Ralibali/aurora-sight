@@ -3,7 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getProviderStatus, startAuditRun, generateFindings } from "@/lib/audit.functions";
+import {
+  generateFindings,
+  getMonitorWorkerStatus,
+  getProviderStatus,
+  startAuditRun,
+} from "@/lib/audit.functions";
 import { AppShell } from "@/components/app/app-shell";
 import { ModeBadge } from "@/components/shared/badges";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,6 +74,11 @@ function BrandPage() {
   const providerStatus = useQuery({
     queryKey: ["provider-status"],
     queryFn: () => getProviderStatus(),
+  });
+
+  const monitorWorkerStatus = useQuery({
+    queryKey: ["monitor-worker-status"],
+    queryFn: () => getMonitorWorkerStatus(),
   });
 
   const q = useQuery({
@@ -254,6 +264,9 @@ function BrandPage() {
   const saveSchedule = useMutation({
     mutationFn: async ({ runNow = false }: { runNow?: boolean } = {}) => {
       if (!brand) throw new Error("Varumärket saknas.");
+      if (!monitorWorkerStatus.data?.configured) {
+        throw new Error("Automatisk worker är inte konfigurerad ännu.");
+      }
       const provider = q.data?.providers.find((item) => item.id === scheduleForm.providerConfigId);
       if (!scheduleForm.promptSetId || !provider) {
         throw new Error("Välj promptgrupp och modell för bevakningen.");
@@ -730,6 +743,19 @@ function BrandPage() {
               </p>
             </CardHeader>
             <CardContent className="space-y-5">
+              {!monitorWorkerStatus.isLoading && !monitorWorkerStatus.data?.configured ? (
+                <div className="flex items-start gap-2 rounded-lg border border-mentioned/50 bg-mentioned/15 px-4 py-3 text-sm">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <div>
+                    <p className="font-medium">Automatisk worker är inte aktiverad.</p>
+                    <p className="mt-1 text-muted-foreground">
+                      Sätt AURORA_MONITOR_CRON_SECRET och scheduler innan bevakning kan aktiveras.
+                      Manuella AI-körningar påverkas inte.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <MonitorMetric
                   label="Status"
@@ -874,7 +900,8 @@ function BrandPage() {
                   disabled={
                     saveSchedule.isPending ||
                     !scheduleForm.promptSetId ||
-                    !scheduleForm.providerConfigId
+                    !scheduleForm.providerConfigId ||
+                    !monitorWorkerStatus.data?.configured
                   }
                 >
                   {monitorSchedule?.enabled ? "Spara bevakning" : "Aktivera bevakning"}
@@ -885,7 +912,8 @@ function BrandPage() {
                   disabled={
                     saveSchedule.isPending ||
                     !scheduleForm.promptSetId ||
-                    !scheduleForm.providerConfigId
+                    !scheduleForm.providerConfigId ||
+                    !monitorWorkerStatus.data?.configured
                   }
                 >
                   Köa körning nu
