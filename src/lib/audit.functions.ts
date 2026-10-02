@@ -12,6 +12,16 @@ export const getProviderStatus = createServerFn({ method: "GET" }).handler(async
   return { openrouter, surface, liveEnabled: openrouter || surface };
 });
 
+export const getMonitorWorkerStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const cronSecret = process.env["AURORA_MONITOR_CRON_SECRET"] ?? "";
+    const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"] ?? "";
+    return {
+      configured: cronSecret.length >= 24 && serviceKey.length >= 24,
+    };
+  });
+
 const RunInput = z.object({
   brandId: z.string().uuid(),
   promptSetId: z.string().uuid(),
