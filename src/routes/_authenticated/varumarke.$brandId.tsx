@@ -74,32 +74,33 @@ function BrandPage() {
   const q = useQuery({
     queryKey: ["brand", brandId],
     queryFn: async () => {
-      const [brand, sets, competitors, runs, providers, actions, reports, schedules] = await Promise.all([
-        supabase.from("brands").select("*").eq("id", brandId).single(),
-        supabase.from("prompt_sets").select("id, name, description").eq("brand_id", brandId),
-        supabase.from("competitors").select("id, name, domain").eq("brand_id", brandId),
-        supabase
-          .from("audit_runs")
-          .select("*")
-          .eq("brand_id", brandId)
-          .order("started_at", { ascending: false }),
-        supabase.from("provider_configs").select("*").eq("enabled", true),
-        supabase
-          .from("actions")
-          .select("id, title, category, rationale, priority, status, finding_id")
-          .eq("brand_id", brandId)
-          .order("priority"),
-        supabase
-          .from("reports")
-          .select("id, title, run_id, is_shared, share_token, created_at")
-          .eq("brand_id", brandId)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("schedules")
-          .select("*")
-          .eq("brand_id", brandId)
-          .order("created_at", { ascending: true }),
-      ]);
+      const [brand, sets, competitors, runs, providers, actions, reports, schedules] =
+        await Promise.all([
+          supabase.from("brands").select("*").eq("id", brandId).single(),
+          supabase.from("prompt_sets").select("id, name, description").eq("brand_id", brandId),
+          supabase.from("competitors").select("id, name, domain").eq("brand_id", brandId),
+          supabase
+            .from("audit_runs")
+            .select("*")
+            .eq("brand_id", brandId)
+            .order("started_at", { ascending: false }),
+          supabase.from("provider_configs").select("*").eq("enabled", true),
+          supabase
+            .from("actions")
+            .select("id, title, category, rationale, priority, status, finding_id")
+            .eq("brand_id", brandId)
+            .order("priority"),
+          supabase
+            .from("reports")
+            .select("id, title, run_id, is_shared, share_token, created_at")
+            .eq("brand_id", brandId)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("schedules")
+            .select("*")
+            .eq("brand_id", brandId)
+            .order("created_at", { ascending: true }),
+        ]);
       const setIds = (sets.data ?? []).map((s) => s.id);
       const prompts = setIds.length
         ? ((
@@ -165,12 +166,15 @@ function BrandPage() {
     const schedule = q.data.schedules?.[0];
     const firstSet = q.data.sets?.[0];
     const preferredProvider =
-      q.data.providers.find((provider) => provider.supports_native_search) ?? q.data.providers[0];
+      q.data.providers.find((provider) => provider.supports_native_search) ??
+      q.data.providers[0];
     setScheduleForm({
       cadence: (schedule?.cadence as MonitorCadence | undefined) ?? "monthly",
       promptSetId: schedule?.prompt_set_id ?? firstSet?.id ?? "",
       providerConfigId: schedule?.provider_config_id ?? preferredProvider?.id ?? "",
-      searchMode: schedule?.search_mode ?? (preferredProvider?.supports_native_search ? "native_search" : "offline"),
+      searchMode:
+        schedule?.search_mode ??
+        (preferredProvider?.supports_native_search ? "native_search" : "offline"),
     });
   }, [q.data]);
 
@@ -270,7 +274,7 @@ function BrandPage() {
         enabled: true,
         next_run_at: runNow
           ? new Date().toISOString()
-          : monitorSchedule?.next_run_at ?? new Date().toISOString(),
+          : (monitorSchedule?.next_run_at ?? new Date().toISOString()),
         running_at: null,
         last_error: null,
         last_error_at: null,
@@ -281,7 +285,11 @@ function BrandPage() {
       if (result.error) throw new Error("Bevakningen kunde inte sparas.");
     },
     onSuccess: (_, variables) => {
-      toast.success(variables?.runNow ? "Bevakningen är köad för nästa worker-körning." : "Bevakningen är aktiv.");
+      toast.success(
+        variables?.runNow
+          ? "Bevakningen är köad för nästa worker-körning."
+          : "Bevakningen är aktiv.",
+      );
       qc.invalidateQueries({ queryKey: ["brand", brandId] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -724,25 +732,44 @@ function BrandPage() {
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <MonitorMetric label="Status" value={{
-                  paused: "Pausad",
-                  running: "Kör nu",
-                  error: "Fel",
-                  due: "Väntar på worker",
-                  scheduled: "Schemalagd",
-                }[monitorStatus]} />
+                <MonitorMetric
+                  label="Status"
+                  value={
+                    {
+                      paused: "Pausad",
+                      running: "Kör nu",
+                      error: "Fel",
+                      due: "Väntar på worker",
+                      scheduled: "Schemalagd",
+                    }[monitorStatus]
+                  }
+                />
                 <MonitorMetric
                   label="Nästa körning"
-                  value={monitorSchedule?.next_run_at ? new Date(monitorSchedule.next_run_at).toLocaleString("sv-SE") : "Inte satt"}
+                  value={
+                    monitorSchedule?.next_run_at
+                      ? new Date(monitorSchedule.next_run_at).toLocaleString("sv-SE")
+                      : "Inte satt"
+                  }
                 />
                 <MonitorMetric
                   label="Senaste körning"
-                  value={monitorSchedule?.last_run_at ? new Date(monitorSchedule.last_run_at).toLocaleString("sv-SE") : "Ingen ännu"}
+                  value={
+                    monitorSchedule?.last_run_at
+                      ? new Date(monitorSchedule.last_run_at).toLocaleString("sv-SE")
+                      : "Ingen ännu"
+                  }
                 />
-                <MonitorMetric label="Intervall" value={
-                  scheduleForm.cadence === "daily" ? "Dagligen" :
-                  scheduleForm.cadence === "weekly" ? "Varje vecka" : "Varje månad"
-                } />
+                <MonitorMetric
+                  label="Intervall"
+                  value={
+                    scheduleForm.cadence === "daily"
+                      ? "Dagligen"
+                      : scheduleForm.cadence === "weekly"
+                        ? "Varje vecka"
+                        : "Varje månad"
+                  }
+                />
               </div>
 
               {monitorSchedule?.last_error ? (
@@ -761,9 +788,13 @@ function BrandPage() {
                   <Label>Intervall</Label>
                   <Select
                     value={scheduleForm.cadence}
-                    onValueChange={(value) => setScheduleForm((form) => ({ ...form, cadence: value as MonitorCadence }))}
+                    onValueChange={(value) =>
+                      setScheduleForm((form) => ({ ...form, cadence: value as MonitorCadence }))
+                    }
                   >
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="daily">Dagligen</SelectItem>
                       <SelectItem value="weekly">Varje vecka</SelectItem>
@@ -775,12 +806,18 @@ function BrandPage() {
                   <Label>Promptgrupp</Label>
                   <Select
                     value={scheduleForm.promptSetId}
-                    onValueChange={(value) => setScheduleForm((form) => ({ ...form, promptSetId: value }))}
+                    onValueChange={(value) =>
+                      setScheduleForm((form) => ({ ...form, promptSetId: value }))
+                    }
                   >
-                    <SelectTrigger className="mt-1"><SelectValue placeholder="Välj promptgrupp" /></SelectTrigger>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Välj promptgrupp" />
+                    </SelectTrigger>
                     <SelectContent>
                       {(q.data?.sets ?? []).map((set) => (
-                        <SelectItem key={set.id} value={set.id}>{set.name}</SelectItem>
+                        <SelectItem key={set.id} value={set.id}>
+                          {set.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -798,7 +835,9 @@ function BrandPage() {
                       }));
                     }}
                   >
-                    <SelectTrigger className="mt-1"><SelectValue placeholder="Välj modell" /></SelectTrigger>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Välj modell" />
+                    </SelectTrigger>
                     <SelectContent>
                       {(q.data?.providers ?? []).map((provider) => (
                         <SelectItem key={provider.id} value={provider.id}>
@@ -812,12 +851,16 @@ function BrandPage() {
                   <Label>Sökläge</Label>
                   <Select
                     value={scheduleForm.searchMode}
-                    onValueChange={(value) => setScheduleForm((form) => ({
-                      ...form,
-                      searchMode: value as "offline" | "native_search",
-                    }))}
+                    onValueChange={(value) =>
+                      setScheduleForm((form) => ({
+                        ...form,
+                        searchMode: value as "offline" | "native_search",
+                      }))
+                    }
                   >
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="offline">Utan webbsök</SelectItem>
                       <SelectItem value="native_search">Provider-native webbsök</SelectItem>
@@ -829,19 +872,31 @@ function BrandPage() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={() => saveSchedule.mutate({ runNow: false })}
-                  disabled={saveSchedule.isPending || !scheduleForm.promptSetId || !scheduleForm.providerConfigId}
+                  disabled={
+                    saveSchedule.isPending ||
+                    !scheduleForm.promptSetId ||
+                    !scheduleForm.providerConfigId
+                  }
                 >
                   {monitorSchedule?.enabled ? "Spara bevakning" : "Aktivera bevakning"}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => saveSchedule.mutate({ runNow: true })}
-                  disabled={saveSchedule.isPending || !scheduleForm.promptSetId || !scheduleForm.providerConfigId}
+                  disabled={
+                    saveSchedule.isPending ||
+                    !scheduleForm.promptSetId ||
+                    !scheduleForm.providerConfigId
+                  }
                 >
                   Köa körning nu
                 </Button>
                 {monitorSchedule?.enabled ? (
-                  <Button variant="ghost" onClick={() => pauseSchedule.mutate()} disabled={pauseSchedule.isPending}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => pauseSchedule.mutate()}
+                    disabled={pauseSchedule.isPending}
+                  >
                     Pausa
                   </Button>
                 ) : null}
@@ -855,8 +910,8 @@ function BrandPage() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Worker-endpointen använder separat serverhemlighet och service-role. Kundens browser kan inte
-                trigga eller claima andra organisationers scheman.
+                Worker-endpointen använder separat serverhemlighet och service-role. Kundens browser
+                kan inte trigga eller claima andra organisationers scheman.
               </p>
             </CardContent>
           </Card>
