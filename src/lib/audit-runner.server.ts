@@ -93,7 +93,9 @@ export async function executeAuditRun({
   const prompts = (promptRows ?? []) as PromptRow[];
   if (prompts.length === 0) throw new Error("Promptsetet innehåller inga aktiva prompter.");
   if (prompts.length > MAX_PROMPTS_PER_RUN) {
-    throw new Error(`Skyddsgräns: max ${MAX_PROMPTS_PER_RUN} prompter per körning (setet har ${prompts.length}).`);
+    throw new Error(
+      `Skyddsgräns: max ${MAX_PROMPTS_PER_RUN} prompter per körning (setet har ${prompts.length}).`,
+    );
   }
 
   const { data: competitorRows } = await supabase
@@ -165,9 +167,7 @@ export async function executeAuditRun({
         const answer = answers[j];
         if (!prompt || !answer) continue;
 
-        const cost =
-          (answer.tokensIn / 1000) * costIn +
-          (answer.tokensOut / 1000) * costOut;
+        const cost = (answer.tokensIn / 1000) * costIn + (answer.tokensOut / 1000) * costOut;
         totalCost += cost;
 
         if (answer.error) {
