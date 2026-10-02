@@ -33,10 +33,7 @@ export const Route = createFileRoute("/api/monitor/run")({
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
 
-        const supabaseUrl =
-          process.env["SUPABASE_URL"] ??
-          process.env["VITE_SUPABASE_URL"] ??
-          "";
+        const supabaseUrl = process.env["SUPABASE_URL"] ?? process.env["VITE_SUPABASE_URL"] ?? "";
         const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"] ?? "";
         if (!supabaseUrl || !serviceKey) {
           return Response.json({ error: "server_database_not_configured" }, { status: 500 });
@@ -46,10 +43,9 @@ export const Route = createFileRoute("/api/monitor/run")({
           auth: { persistSession: false, autoRefreshToken: false },
         });
 
-        const { data: claimed, error: claimError } = await db.rpc(
-          "claim_due_sight_schedules",
-          { p_limit: 1 },
-        );
+        const { data: claimed, error: claimError } = await db.rpc("claim_due_sight_schedules", {
+          p_limit: 1,
+        });
         if (claimError) {
           console.error("[monitor-run] claim failed", claimError.message);
           return Response.json({ error: "claim_failed" }, { status: 500 });
@@ -83,7 +79,9 @@ export const Route = createFileRoute("/api/monitor/run")({
                 .select("id,model_id")
                 .eq("org_id", schedule.org_id)
                 .eq("enabled", true);
-              if (schedule.model_id) providerQuery = providerQuery.eq("model_id", schedule.model_id);
+              if (schedule.model_id) {
+                providerQuery = providerQuery.eq("model_id", schedule.model_id);
+              }
               const { data } = await providerQuery
                 .order("supports_native_search", { ascending: false })
                 .limit(1)
@@ -123,7 +121,8 @@ export const Route = createFileRoute("/api/monitor/run")({
             if (updateError) throw updateError;
             completed += 1;
           } catch (error) {
-            const message = error instanceof Error ? error.message.slice(0, 1000) : "Okänt fel.";
+            const message =
+              error instanceof Error ? error.message.slice(0, 1000) : "Okänt fel.";
             errors.push(message);
             await db
               .from("schedules")
